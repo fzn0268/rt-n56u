@@ -344,6 +344,18 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr id="row_80211kv">
+                                            <th>
+                                                <#WLANConfig11n_80211kv#>
+                                            </th>
+                                            <td>
+                                                <select name="rt_HT_80211KV" class="input">
+                                                    <option value="0" <% nvram_match_x("", "rt_HT_80211KV" , "0" , "selected" ); %>><#btn_Disable#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "rt_HT_80211KV" , "1" , "selected" ); %>><#btn_Enable#>
+                                                    </option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                         <tr id="row_greenfield">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 19);"><#WLANConfig11b_x_HT_OpMode_itemname#></a></th>
                                             <td>

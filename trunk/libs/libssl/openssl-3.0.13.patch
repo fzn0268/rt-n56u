@@ -1,0 +1,102 @@
+diff -Naur openssl-3.0.13-ref/build.info openssl-3.0.13/build.info
+--- openssl-3.0.13-ref/build.info	2024-05-26 07:56:23.099069722 +0000
++++ openssl-3.0.13/build.info	2024-05-26 07:56:39.086976656 +0000
+@@ -1,7 +1,7 @@
+ # Note that some of these directories are filtered in Configure.  Look for
+ # %skipdir there for further explanations.
+ 
+-SUBDIRS=crypto ssl apps util tools fuzz providers doc
++SUBDIRS=crypto ssl apps util tools providers doc
+ IF[{- !$disabled{tests} -}]
+   SUBDIRS=test
+ ENDIF
+diff -Naur openssl-3.0.13-ref/crypto/build.info openssl-3.0.13/crypto/build.info
+--- openssl-3.0.13-ref/crypto/build.info	2024-05-26 07:56:23.115069630 +0000
++++ openssl-3.0.13/crypto/build.info	2024-05-26 07:57:44.586591788 +0000
+@@ -109,7 +109,7 @@
+ 
+ DEPEND[info.o]=buildinf.h
+ DEPEND[cversion.o]=buildinf.h
+-GENERATE[buildinf.h]=../util/mkbuildinf.pl "$(CC) $(LIB_CFLAGS) $(CPPFLAGS_Q)" "$(PLATFORM)"
++GENERATE[buildinf.h]=../util/mkbuildinf.pl "$(filter-out -I% -iremap% -fmacro-prefix-map% -ffile-prefix-map%,$(CC) $(LIB_CFLAGS) $(CPPFLAGS_Q))" "$(PLATFORM)"
+ 
+ GENERATE[uplink-x86.S]=../ms/uplink-x86.pl
+ GENERATE[uplink-x86_64.s]=../ms/uplink-x86_64.pl
+diff -Naur openssl-3.0.13-ref/include/openssl/ssl.h.in openssl-3.0.13/include/openssl/ssl.h.in
+--- openssl-3.0.13-ref/include/openssl/ssl.h.in	2024-05-26 07:56:23.231068956 +0000
++++ openssl-3.0.13/include/openssl/ssl.h.in	2024-05-26 08:03:16.204574819 +0000
+@@ -195,9 +195,15 @@
+  * DEPRECATED IN 3.0.0, in favor of OSSL_default_ciphersuites()
+  * Update both macro and function simultaneously
+  */
+-#  define TLS_DEFAULT_CIPHERSUITES "TLS_AES_256_GCM_SHA384:" \
+-                                   "TLS_CHACHA20_POLY1305_SHA256:" \
+-                                   "TLS_AES_128_GCM_SHA256"
++#  ifdef OPENSSL_PREFER_CHACHA_OVER_GCM
++#   define TLS_DEFAULT_CIPHERSUITES "TLS_CHACHA20_POLY1305_SHA256:" \
++                                    "TLS_AES_256_GCM_SHA384:" \
++                                    "TLS_AES_128_GCM_SHA256"
++#  else
++#   define TLS_DEFAULT_CIPHERSUITES "TLS_AES_256_GCM_SHA384:" \
++                                    "TLS_CHACHA20_POLY1305_SHA256:" \
++                                    "TLS_AES_128_GCM_SHA256"
++#  endif
+ # endif
+ /*
+  * As of OpenSSL 1.0.0, ssl_create_cipher_list() in ssl/ssl_ciph.c always
+diff -Naur openssl-3.0.13-ref/ssl/ssl_ciph.c openssl-3.0.13/ssl/ssl_ciph.c
+--- openssl-3.0.13-ref/ssl/ssl_ciph.c	2024-05-26 07:56:23.251068840 +0000
++++ openssl-3.0.13/ssl/ssl_ciph.c	2024-05-26 08:09:42.699771560 +0000
+@@ -1506,11 +1506,29 @@
+     ssl_cipher_apply_rule(0, SSL_kECDHE, 0, 0, 0, 0, 0, CIPHER_DEL, -1, &head,
+                           &tail);
+ 
++    /*
++     * If OPENSSL_PREFER_CHACHA_OVER_GCM is defined, ChaCha20_Poly1305
++     * will be placed before AES-256.  Otherwise, the default behavior of
++     * preferring GCM over CHACHA is used.
++     * This is useful for systems that do not have AES-specific CPU
++     * instructions, where ChaCha20-Poly1305 is 3 times faster than AES.
++     * Note that this does not have the same effect as the SSL_OP_PRIORITIZE_CHACHA
++     * option, which prioritizes ChaCha20-Poly1305 only when the client has it on top
++     * of its ciphersuite preference.
++     */
++
++#ifdef OPENSSL_PREFER_CHACHA_OVER_GCM
++    ssl_cipher_apply_rule(0, 0, 0, SSL_CHACHA20, 0, 0, 0, CIPHER_ADD, -1,
++                          &head, &tail);
++    ssl_cipher_apply_rule(0, 0, 0, SSL_AESGCM, 0, 0, 0, CIPHER_ADD, -1,
++                          &head, &tail);
++#else
+     /* Within each strength group, we prefer GCM over CHACHA... */
+     ssl_cipher_apply_rule(0, 0, 0, SSL_AESGCM, 0, 0, 0, CIPHER_ADD, -1,
+                           &head, &tail);
+     ssl_cipher_apply_rule(0, 0, 0, SSL_CHACHA20, 0, 0, 0, CIPHER_ADD, -1,
+                           &head, &tail);
++#endif
+ 
+     /*
+      * ...and generally, our preferred cipher is AES.
+@@ -1565,7 +1583,7 @@
+      * Within each group, ciphers remain sorted by strength and previous
+      * preference, i.e.,
+      * 1) ECDHE > DHE
+-     * 2) GCM > CHACHA
++     * 2) GCM > CHACHA, reversed if OPENSSL_PREFER_CHACHA_OVER_GCM is defined
+      * 3) AES > rest
+      * 4) TLS 1.2 > legacy
+      *
+@@ -2236,7 +2254,13 @@
+  */
+ const char *OSSL_default_ciphersuites(void)
+ {
++#ifdef OPENSSL_PREFER_CHACHA_OVER_GCM
++    return "TLS_CHACHA20_POLY1305_SHA256:"
++           "TLS_AES_256_GCM_SHA384:"
++           "TLS_AES_128_GCM_SHA256";
++#else
+     return "TLS_AES_256_GCM_SHA384:"
+            "TLS_CHACHA20_POLY1305_SHA256:"
+            "TLS_AES_128_GCM_SHA256";
++#endif
+ }

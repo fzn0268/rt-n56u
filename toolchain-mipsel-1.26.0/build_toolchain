@@ -1,0 +1,41 @@
+#!/bin/bash
+
+unset LD_LIBRARY_PATH
+
+VER_XTOOL_NG=1.26.0
+
+echo "================ START DOWNLOAD TOOLCHAIN =============="
+
+if [ ! -f ../crosstool-ng-${VER_XTOOL_NG}.tar.xz ]; then
+	wget -t3 --timeout=20 --no-check-certificate -O ../crosstool-ng-${VER_XTOOL_NG}.tar.xz http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-${VER_XTOOL_NG}.tar.xz || exit 1
+fi
+
+if [ ! -f bootstrap ]; then
+	tar xJf ../crosstool-ng-${VER_XTOOL_NG}.tar.xz -C ../ && \
+	mv ../crosstool-ng-${VER_XTOOL_NG}/* . && \
+	rm -rf ../crosstool-ng-${VER_XTOOL_NG} || exit 1
+fi
+
+echo "================ START BUILDING TOOLCHAIN =============="
+
+if [ ! -f configure ]; then
+	./bootstrap || exit 1
+fi
+if [ ! -f Makefile ]; then
+	./configure --enable-local || exit 1
+fi
+if [ ! -f ct-ng ]; then
+	make || exit 1
+fi
+if [ ! -d dl ]; then
+	echo "============= CREATE LOCAL TARBALLS DIR ================"
+	mkdir dl
+fi
+if [ -d .build ]; then
+	echo "============== CLEANING OLD BUILD TREE ================="
+	./ct-ng clean
+fi
+
+(./ct-ng mipsel-linux-uclibc && ./ct-ng build) || exit 1
+
+echo "====================All IS DONE!========================"

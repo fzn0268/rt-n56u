@@ -23,6 +23,8 @@ dir_n =
 dir_  =
 
 LIBS_INCLUDE_LIBLZO=n
+LIBS_INCLUDE_LIBNL=n
+LIBS_INCLUDE_LIBCAP_NG=n
 LIBS_INCLUDE_LIBICONV=n
 LIBS_INCLUDE_LIBUSB_0=n
 LIBS_INCLUDE_LIBUSB_1=n
@@ -55,6 +57,8 @@ endif
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
 LIBS_INCLUDE_LIBLZO=y
+LIBS_INCLUDE_LIBNL=y
+LIBS_INCLUDE_LIBCAP_NG=y
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_TTYD),y)
 LIBS_INCLUDE_LIBJSON_C=y
@@ -179,6 +183,8 @@ endif
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_NCURSES)			+= libncurses
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo
+dir_$(LIBS_INCLUDE_LIBNL)			+= libnl
+dir_$(LIBS_INCLUDE_LIBCAP_NG)		+= libcap-ng
 dir_$(LIBS_INCLUDE_LIBICONV)			+= libiconv
 dir_y						+= libssl
 dir_$(LIBS_INCLUDE_LIBUSB_0)			+= libusb

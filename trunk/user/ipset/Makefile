@@ -1,10 +1,22 @@
-SRC_NAME=ipset-6.x
+SRC_NAME=ipset-7.21
+SRC_URL=https://ipset.netfilter.org/ipset-7.21.tar.bz2
 
 THISDIR = $(shell pwd)
 
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
 	$(MAKE) modules -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.bz2 ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.bz2 $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar -xjf $(SRC_NAME).tar.bz2; \
+		patch -d $(SRC_NAME) -p1 -i ../ipset-compat-7.21.patch; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -17,6 +29,7 @@ configure:
 	( cd $(SRC_NAME) ; \
 	./autogen.sh ; \
 	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
+	CFLAGS=-Wno-strict-prototypes \
 	./configure \
 		--prefix= \
 		--enable-static \

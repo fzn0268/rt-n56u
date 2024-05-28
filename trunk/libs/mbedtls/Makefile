@@ -1,17 +1,17 @@
-SRC_NAME=mbedtls-2.7.12
-SRC_URL=https://tls.mbed.org/download/mbedtls-2.7.12-gpl.tgz
+SRC_NAME=mbedtls-3.6.0
+SRC_URL=https://github.com/Mbed-TLS/mbedtls/releases/download/v3.6.0/mbedtls-3.6.0.tar.bz2
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/build
 
 download_test:
-	( if [ ! -f $(SRC_NAME).tgz ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tgz $(SRC_URL); \
+	( if [ ! -f $(SRC_NAME).tar.bz2 ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.bz2 $(SRC_URL); \
 	fi )
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar -xf $(SRC_NAME).tgz; \
+		tar -xjf $(SRC_NAME).tar.bz2; \
 	fi )
 
 config_test:

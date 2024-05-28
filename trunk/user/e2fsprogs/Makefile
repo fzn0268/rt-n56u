@@ -1,5 +1,5 @@
-SRC_NAME=e2fsprogs-1.45.3
-SRC_URL=https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.45.3/e2fsprogs-1.45.3.tar.xz
+SRC_NAME=e2fsprogs-1.47.1
+SRC_URL=https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.1/e2fsprogs-1.47.1.tar.xz
 
 THISDIR = $(shell pwd)
 
@@ -17,7 +17,7 @@ download_test:
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar xJf $(SRC_NAME).tar.xz; \
-		patch -d $(SRC_NAME) -p1 -i ../e2fsprogs-orig.patch; \
+		patch -d $(SRC_NAME) -p1 -i ../$(SRC_NAME).patch; \
 	fi )
 
 config_test:
@@ -29,7 +29,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	autoreconf -fi ; \
+#	autoreconf -fi ; \
 	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
 	./configure \
 		--prefix= \

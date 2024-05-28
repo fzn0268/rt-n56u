@@ -1,0 +1,62 @@
+diff -urN ipset-7.21-ref/configure.ac ipset-7.21/configure.ac
+--- ipset-7.21-ref/configure.ac	2024-05-28 14:23:30.244882814 +0000
++++ ipset-7.21/configure.ac	2024-05-28 14:24:09.528596906 +0000
+@@ -772,7 +772,7 @@
+ 	AC_SUBST(HAVE_STRSCPY_PAD, define)
+ else
+ 	AC_MSG_RESULT(no)
+-	AC_SUBST(HAVE_STRSCPY, undef)
++	AC_SUBST(HAVE_STRSCPY_PAD, undef)
+ fi
+ 
+ AC_MSG_CHECKING([kernel source for synchronize_rcu_bh() in rcutiny.h and rcupdate.h])
+diff -urN ipset-7.21-ref/kernel/net/Kbuild ipset-7.21/kernel/net/Kbuild
+--- ipset-7.21-ref/kernel/net/Kbuild	2024-05-28 14:23:30.244882814 +0000
++++ ipset-7.21/kernel/net/Kbuild	2024-05-28 14:24:09.528596906 +0000
+@@ -2,7 +2,6 @@
+ EXTRA_CFLAGS := -DCONFIG_IP_SET_MAX=$(IP_SET_MAX)
+ 
+ obj-m += netfilter/
+-obj-m += sched/
+ 
+ # It's for me...
+ incdirs := $(M) $(KDIR)/include/linux/netfilter $(KDIR)/include/linux/netfilter/ipset
+diff -urN ipset-7.21-ref/kernel/net/netfilter/ipset/ip_set_hash_gen.h ipset-7.21/kernel/net/netfilter/ipset/ip_set_hash_gen.h
+--- ipset-7.21-ref/kernel/net/netfilter/ipset/ip_set_hash_gen.h	2024-05-28 14:23:30.240882843 +0000
++++ ipset-7.21/kernel/net/netfilter/ipset/ip_set_hash_gen.h	2024-05-28 14:24:09.528596906 +0000
+@@ -8,21 +8,17 @@
+ #include <linux/rcupdate.h>
+ #include <linux/jhash.h>
+ #include <linux/types.h>
+-#include <linux/netfilter/nfnetlink.h>
+ #include <linux/netfilter/ipset/ip_set.h>
+ 
+ #define __ipset_dereference(p)		\
+ 	rcu_dereference_protected(p, 1)
+ #define ipset_dereference_nfnl(p)	\
+-	rcu_dereference_protected(p,	\
+-		lockdep_nfnl_is_held(NFNL_SUBSYS_IPSET))
++	rcu_dereference_protected(p, 1)
+ #define ipset_dereference_set(p, set) 	\
+ 	rcu_dereference_protected(p,	\
+-		lockdep_nfnl_is_held(NFNL_SUBSYS_IPSET) || \
+ 		lockdep_is_held(&(set)->lock))
+ #define ipset_dereference_bh_nfnl(p)	\
+-	rcu_dereference_bh_check(p, 	\
+-		lockdep_nfnl_is_held(NFNL_SUBSYS_IPSET))
++	rcu_dereference_bh_check(p, 1)
+ 
+ /* Hashing which uses arrays to resolve clashing. The hash table is resized
+  * (doubled) when searching becomes too long.
+diff -urN ipset-7.21-ref/Makefile.am ipset-7.21/Makefile.am
+--- ipset-7.21-ref/Makefile.am	2024-05-28 14:23:30.244882814 +0000
++++ ipset-7.21/Makefile.am	2024-05-28 14:24:54.656268727 +0000
+@@ -35,7 +35,7 @@
+ modules:
+ if WITH_KMOD
+ 	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net V=$V \
+-			KCFLAGS="-DPACKAGE_VERSION=$(PACKAGE_VERSION)" \
++			KCFLAGS="-DPACKAGE_VERSION=$(PACKAGE_VERSION) -Wno-strict-prototypes" \
+ 			IP_SET_MAX=$(IP_SET_MAX) KDIR=$$PWD/kernel modules
+ else
+ 	@echo Skipping kernel modules due to --with-kmod=no

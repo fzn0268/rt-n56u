@@ -1,0 +1,65 @@
+diff -rup openssh-9.7p1-ref/Makefile.in openssh-9.7p1/Makefile.in
+--- openssh-9.7p1-ref/Makefile.in	2024-05-26 09:18:43.327826705 +0000
++++ openssh-9.7p1/Makefile.in	2024-05-26 12:10:39.935824452 +0000
+@@ -202,6 +202,7 @@ always:
+ libssh.a: $(LIBSSH_OBJS)
+ 	$(AR) rv $@ $(LIBSSH_OBJS)
+ 	$(RANLIB) $@
++	$(LD) $(LDFLAGS) -shared -o libssh.so $^
+ 
+ ssh$(EXEEXT): $(LIBCOMPAT) libssh.a $(SSHOBJS)
+ 	$(LD) -o $@ $(SSHOBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(GSSLIBS) $(CHANNELLIBS)
+@@ -210,13 +211,13 @@ sshd$(EXEEXT): libssh.a	$(LIBCOMPAT) $(S
+ 	$(LD) -o $@ $(SSHDOBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(SSHDLIBS) $(LIBS) $(GSSLIBS) $(K5LIBS) $(CHANNELLIBS)
+ 
+ scp$(EXEEXT): $(LIBCOMPAT) libssh.a $(SCP_OBJS)
+-	$(LD) -o $@ $(SCP_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS)
++	$(LD) -o $@ $(SCP_OBJS) $(LDFLAGS) libssh.a -lopenbsd-compat $(LIBS)
+ 
+ ssh-add$(EXEEXT): $(LIBCOMPAT) libssh.a $(SSHADD_OBJS)
+-	$(LD) -o $@ $(SSHADD_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
++	$(LD) -o $@ $(SSHADD_OBJS) $(LDFLAGS) libssh.a -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
+ 
+ ssh-agent$(EXEEXT): $(LIBCOMPAT) libssh.a $(SSHAGENT_OBJS)
+-	$(LD) -o $@ $(SSHAGENT_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
++	$(LD) -o $@ $(SSHAGENT_OBJS) $(LDFLAGS) libssh.a -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
+ 
+ ssh-keygen$(EXEEXT): $(LIBCOMPAT) libssh.a $(SSHKEYGEN_OBJS)
+ 	$(LD) -o $@ $(SSHKEYGEN_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
+@@ -225,19 +226,19 @@ ssh-keysign$(EXEEXT): $(LIBCOMPAT) libss
+ 	$(LD) -o $@ $(SSHKEYSIGN_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
+ 
+ ssh-pkcs11-helper$(EXEEXT): $(LIBCOMPAT) libssh.a $(P11HELPER_OBJS)
+-	$(LD) -o $@ $(P11HELPER_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat -lssh -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
++	$(LD) -o $@ $(P11HELPER_OBJS) $(LDFLAGS) libssh.a -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
+ 
+ ssh-sk-helper$(EXEEXT): $(LIBCOMPAT) libssh.a $(SKHELPER_OBJS)
+-	$(LD) -o $@ $(SKHELPER_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat -lssh -lopenbsd-compat $(LIBS) $(LIBFIDO2) $(CHANNELLIBS)
++	$(LD) -o $@ $(SKHELPER_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(LIBFIDO2) $(CHANNELLIBS)
+ 
+ ssh-keyscan$(EXEEXT): $(LIBCOMPAT) libssh.a $(SSHKEYSCAN_OBJS)
+-	$(LD) -o $@ $(SSHKEYSCAN_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat -lssh $(LIBS) $(CHANNELLIBS)
++	$(LD) -o $@ $(SSHKEYSCAN_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(CHANNELLIBS)
+ 
+ sftp-server$(EXEEXT): $(LIBCOMPAT) libssh.a $(SFTPSERVER_OBJS)
+-	$(LD) -o $@ $(SFTPSERVER_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat -lssh $(LIBS)
++	$(LD) -o $@ $(SFTPSERVER_OBJS) $(LDFLAGS) libssh.a -lopenbsd-compat $(LIBS)
+ 
+ sftp$(EXEEXT): $(LIBCOMPAT) libssh.a $(SFTP_OBJS)
+-	$(LD) -o $@ $(SFTP_OBJS) $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(LIBEDIT)
++	$(LD) -o $@ $(SFTP_OBJS) $(LDFLAGS) libssh.a -lopenbsd-compat $(LIBS) $(LIBEDIT)
+ 
+ # test driver for the loginrec code - not built by default
+ logintest: logintest.o $(LIBCOMPAT) libssh.a loginrec.o
+diff -rup openssh-9.7p1-ref/pathnames.h openssh-9.7p1/pathnames.h
+--- openssh-9.7p1-ref/pathnames.h	2024-05-26 09:18:43.351826512 +0000
++++ openssh-9.7p1/pathnames.h	2024-05-26 12:12:26.062968612 +0000
+@@ -41,7 +41,7 @@
+ #define _PATH_HOST_ED25519_KEY_FILE	SSHDIR "/ssh_host_ed25519_key"
+ #define _PATH_HOST_XMSS_KEY_FILE	SSHDIR "/ssh_host_xmss_key"
+ #define _PATH_HOST_RSA_KEY_FILE		SSHDIR "/ssh_host_rsa_key"
+-#define _PATH_DH_MODULI			SSHDIR "/moduli"
++#define _PATH_DH_MODULI			"/etc_ro/ssh/moduli"
+ 
+ #ifndef _PATH_SSH_PROGRAM
+ #define _PATH_SSH_PROGRAM		"/usr/bin/ssh"

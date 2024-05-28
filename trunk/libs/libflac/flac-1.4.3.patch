@@ -1,0 +1,28 @@
+diff -urw flac-1.4.3-ref/Makefile.am flac-1.4.3/Makefile.am
+--- flac-1.4.3-ref/Makefile.am	2024-05-26 13:01:13.234423141 +0000
++++ flac-1.4.3/Makefile.am	2024-05-26 13:02:47.985623088 +0000
+@@ -31,7 +31,7 @@
+ 
+ ACLOCAL_AMFLAGS = -I m4
+ 
+-SUBDIRS = doc include m4 man src test microbench oss-fuzz
++SUBDIRS = include m4 src
+ 
+ if EXAMPLES
+ SUBDIRS += examples
+diff -urw flac-1.4.3-ref/src/Makefile.am flac-1.4.3/src/Makefile.am
+--- flac-1.4.3-ref/src/Makefile.am	2024-05-26 13:01:13.266422870 +0000
++++ flac-1.4.3/src/Makefile.am	2024-05-26 13:07:24.851285141 +0000
+@@ -28,12 +28,6 @@
+ 	libFLAC \
+ 	share \
+ 	$(PROGRAMS_DIRS) \
+-	test_grabbag \
+-	test_libs_common \
+-	test_libFLAC \
+-	test_seeking \
+-	test_streams \
+-	utils \
+ 	$(CPPLIBS_DIRS)
+ 
+ EXTRA_DIST = \
